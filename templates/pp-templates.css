@@ -14,7 +14,7 @@
 .pp-tpl-tab:hover{border-color:var(--pp-blue);color:var(--pp-blue)}
 .pp-tpl-tab.is-active{background:var(--pp-blue);border-color:var(--pp-blue);color:#fff}
 .pp-tpl-tab small{opacity:.7;font-weight:500;margin-left:4px}
-.pp-tpl-search{position:relative;align-self:flex-end;width:380px;max-width:100%}
+.pp-tpl-search{position:relative;align-self:flex-start;width:380px;max-width:100%}
 .pp-tpl-search input{width:100%;font:inherit;font-size:14px;padding:9px 12px 9px 36px;border:1px solid var(--pp-line);border-radius:999px;outline:none}
 .pp-tpl-search input:focus{border-color:var(--pp-blue);box-shadow:0 0 0 3px var(--pp-blue-100)}
 .pp-tpl-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--pp-ink-3);fill:none;stroke-width:2}
