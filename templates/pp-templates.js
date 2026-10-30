@@ -85,8 +85,9 @@
     var tabs = '<button class="pp-tpl-tab is-active" data-cat="all">전체<small>' + items.filter(function (i) { return i.kind === 'single'; }).length + '</small></button>' +
       cats.map(function (c) { return '<button class="pp-tpl-tab" data-cat="' + esc(c.slug) + '">' + esc(c.label) + '<small>' + (counts[c.slug] || 0) + '</small></button>'; }).join('');
     var el = document.createElement('div');
-    el.innerHTML = '<div class="pp-tpl-toolbar"><div class="pp-tpl-tabs">' + tabs + '</div>' +
-      '<label class="pp-tpl-search">' + ICON_SEARCH + '<input type="search" placeholder="규격·형태 검색 (예: 50x50, 3단접지)" data-pp-tpl-q></label></div>' +
+    el.innerHTML = '<div class="pp-tpl-toolbar">' +
+      '<label class="pp-tpl-search">' + ICON_SEARCH + '<input type="search" placeholder="규격·형태 검색 (예: 50x50, 3단접지)" data-pp-tpl-q></label>' +
+      '<div class="pp-tpl-tabs">' + tabs + '</div></div>' +
       '<div data-pp-tpl-body></div>';
     while (el.firstChild) root.appendChild(el.firstChild);
   }
