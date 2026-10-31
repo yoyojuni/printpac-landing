@@ -30,8 +30,8 @@
     if (it.fold) meta.push(it.fold);
     meta.push('<span class="pp-tpl-badge">' + esc(it.format) + '</span>');
     meta.push(it.size);
-    return '<article class="pp-tpl-card">' +
-      '<div class="pp-tpl-thumb">' + (it.preview ? '<img src="' + esc(it.preview) + '" alt="" loading="lazy">' : shapeSvg(it)) + '</div>' +
+    return '<article class="pp-tpl-card" data-id="' + esc(it.id) + '">' +
+      '<div class="pp-tpl-thumb' + (it.preview ? ' is-zoomable' : '') + '"' + (it.preview ? ' role="button" tabindex="0" aria-label="크게 보기"' : '') + '>' + (it.preview ? '<img src="' + esc(it.preview) + '" alt="" loading="lazy">' : shapeSvg(it)) + '</div>' +
       '<h3>' + esc(it.title) + '</h3>' +
       (it.desc ? '<p style="margin:0;font-size:13px;color:#4A5068">' + esc(it.desc) + '</p>' : '') +
       '<div class="pp-tpl-meta">' + meta.join(' · ') + '</div>' +
@@ -92,10 +92,37 @@
     while (el.firstChild) root.appendChild(el.firstChild);
   }
 
+  // 확대 보기 (라이트박스): Drive 썸네일을 큰 사이즈로 다시 요청 (w1200, 고밀도 화면 w1600)
+  function bigUrl(u, w) { return /[?&]sz=w\d+/.test(u) ? u.replace(/([?&]sz=)w\d+/, '$1w' + w) : u; }
+  var lb = document.createElement('div');
+  lb.className = 'pp-tpl-lb'; lb.hidden = true;
+  lb.innerHTML = '<div class="pp-tpl-lb-box" role="dialog" aria-modal="true">' +
+    '<button class="pp-tpl-lb-close" type="button" aria-label="닫기">&times;</button>' +
+    '<div class="pp-tpl-lb-img"><img alt=""></div>' +
+    '<div class="pp-tpl-lb-bar"><div><b data-lb-title></b><span data-lb-meta></span></div><a class="pp-tpl-dl" data-lb-dl href="#">' + ICON_DL + '다운로드</a></div></div>';
+  root.appendChild(lb);
+  function openLb(it) {
+    var img = lb.querySelector('img');
+    img.src = bigUrl(it.preview, 1200);
+    img.srcset = bigUrl(it.preview, 1200) + ' 1x, ' + bigUrl(it.preview, 1600) + ' 2x';
+    lb.querySelector('[data-lb-title]').textContent = it.title;
+    var meta = []; if (it.w) meta.push(it.w + '×' + it.h + 'mm'); if (it.fold) meta.push(it.fold); meta.push(it.format + ' · ' + it.size);
+    lb.querySelector('[data-lb-meta]').textContent = meta.join(' · ');
+    lb.querySelector('[data-lb-dl]').href = it.url;
+    lb.hidden = false; document.body.classList.add('pp-tpl-lb-open');
+    lb.querySelector('.pp-tpl-lb-close').focus();
+  }
+  function closeLb() { lb.hidden = true; document.body.classList.remove('pp-tpl-lb-open'); lb.querySelector('img').removeAttribute('src'); }
+  lb.addEventListener('click', function (e) { if (e.target === lb || e.target.closest('.pp-tpl-lb-close')) closeLb(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !lb.hidden) closeLb(); });
+
   shell(); render();
   root.addEventListener('click', function (e) {
+    var th = e.target.closest('.pp-tpl-thumb.is-zoomable');
+    if (th) { var id = th.closest('.pp-tpl-card').dataset.id; var it = items.filter(function (i) { return i.id === id; })[0]; if (it) openLb(it); return; }
     var tab = e.target.closest('.pp-tpl-tab'); if (tab) { state.cat = tab.dataset.cat; render(); return; }
     var chip = e.target.closest('.pp-tpl-chip'); if (chip) { state.sub[chip.closest('section').dataset.cat] = chip.dataset.sub; render(); }
   });
+  root.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('is-zoomable')) { e.preventDefault(); e.target.click(); } });
   root.querySelector('[data-pp-tpl-q]').addEventListener('input', function (e) { state.q = e.target.value.trim().toLowerCase().replace(/×/g, 'x'); render(); });
 })();
