@@ -101,10 +101,25 @@
     '<div class="pp-tpl-lb-img"><img alt=""></div>' +
     '<div class="pp-tpl-lb-bar"><div><b data-lb-title></b><span data-lb-meta></span></div><a class="pp-tpl-dl" data-lb-dl href="#">' + ICON_DL + '다운로드</a></div></div>';
   root.appendChild(lb);
+  var lbCurrent = null, bigCache = {};
+  // 큰 이미지 미리 받기 (hover 시 호출 → 클릭 시 즉시 표시)
+  function prefetchBig(it) {
+    if (!it || !it.preview || bigCache[it.id]) return bigCache[it.id];
+    var big = new Image();
+    big.srcset = bigUrl(it.preview, 1200) + ' 1x, ' + bigUrl(it.preview, 1600) + ' 2x';
+    big.src = bigUrl(it.preview, 1200);
+    bigCache[it.id] = big;
+    return big;
+  }
   function openLb(it) {
     var img = lb.querySelector('img');
-    img.src = bigUrl(it.preview, 1200);
-    img.srcset = bigUrl(it.preview, 1200) + ' 1x, ' + bigUrl(it.preview, 1600) + ' 2x';
+    lbCurrent = it.id;
+    // 1) 이미 캐시된 카드 썸네일을 즉시 표시 (이전 이미지 잔상 방지)
+    img.removeAttribute('srcset'); img.src = it.preview; img.classList.add('is-loading');
+    // 2) 큰 이미지는 로드 완료 후 교체
+    var big = prefetchBig(it);
+    var swap = function () { if (lbCurrent !== it.id) return; img.srcset = big.srcset; img.src = big.src; img.classList.remove('is-loading'); };
+    if (big.complete && big.naturalWidth) swap(); else { big.onload = swap; big.onerror = function () { img.classList.remove('is-loading'); }; }
     lb.querySelector('[data-lb-title]').textContent = it.title;
     var meta = []; if (it.w) meta.push(it.w + '×' + it.h + 'mm'); if (it.fold) meta.push(it.fold); meta.push(it.format + ' · ' + it.size);
     lb.querySelector('[data-lb-meta]').textContent = meta.join(' · ');
@@ -112,7 +127,7 @@
     lb.hidden = false; document.body.classList.add('pp-tpl-lb-open');
     lb.querySelector('.pp-tpl-lb-close').focus();
   }
-  function closeLb() { lb.hidden = true; document.body.classList.remove('pp-tpl-lb-open'); lb.querySelector('img').removeAttribute('src'); }
+  function closeLb() { lbCurrent = null; lb.hidden = true; document.body.classList.remove('pp-tpl-lb-open'); var img = lb.querySelector('img'); img.removeAttribute('srcset'); img.removeAttribute('src'); img.classList.remove('is-loading'); }
   lb.addEventListener('click', function (e) { if (e.target === lb || e.target.closest('.pp-tpl-lb-close')) closeLb(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !lb.hidden) closeLb(); });
 
@@ -122,6 +137,10 @@
     if (th) { var id = th.closest('.pp-tpl-card').dataset.id; var it = items.filter(function (i) { return i.id === id; })[0]; if (it) openLb(it); return; }
     var tab = e.target.closest('.pp-tpl-tab'); if (tab) { state.cat = tab.dataset.cat; render(); return; }
     var chip = e.target.closest('.pp-tpl-chip'); if (chip) { state.sub[chip.closest('section').dataset.cat] = chip.dataset.sub; render(); }
+  });
+  root.addEventListener('mouseover', function (e) {
+    var th = e.target.closest('.pp-tpl-thumb.is-zoomable'); if (!th) return;
+    var id = th.closest('.pp-tpl-card').dataset.id; prefetchBig(items.filter(function (i) { return i.id === id; })[0]);
   });
   root.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('is-zoomable')) { e.preventDefault(); e.target.click(); } });
   root.querySelector('[data-pp-tpl-q]').addEventListener('input', function (e) { state.q = e.target.value.trim().toLowerCase().replace(/×/g, 'x'); render(); });
